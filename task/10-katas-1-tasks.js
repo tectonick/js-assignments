@@ -17,8 +17,57 @@
  *  ]
  */
 function createCompassPoints() {
-    throw new Error('Not implemented');
-    var sides = ['N','E','S','W'];  // use array of cardinal directions only!
+    function ordinal(i) {
+        let left = cardinal[(i - 4) / 8];
+        let rigth = cardinal[(i + 4) / 8];
+
+        let abbr;
+        if (left == 'E' || left == "W") {
+            abbr = rigth + left;
+        } else {
+            abbr = left + rigth;
+        }
+        return abbr;
+    }
+
+    var cardinal = ['N', 'E', 'S', 'W'];  // use array of cardinal directions only!
+    var result = [];
+    cardinal.push("N");
+    for (let i = 0; i < 32; i++) {
+        let az = i * 11.25;
+        if (i % 8 == 0) {
+            result.push({ abbreviation: cardinal[i / 8], azimuth: az });
+        } else if (i % 4 == 0) {
+            let abbr = ordinal(i);
+            result.push({ abbreviation: abbr, azimuth: az });
+        } else if (i % 2 == 0) {
+            //nearest cardinal            
+            let mod = i % 8;
+            let left = (mod == 2) ? (cardinal[(i - 2) / 8]) : (cardinal[(i + 2) / 8]);
+            //nearest ordinal
+            let j = (mod == 2) ? i + 2 : i - 2;
+            let rigth = ordinal(j);
+            let abbr = left + rigth;
+            result.push({ abbreviation: abbr, azimuth: az });
+        } else {
+            let mod = i % 4;
+            let j = (mod == 1) ? i - 1 : i + 1;
+
+            let nearPrincipal;
+            let nearCardinal;
+
+            if (j % 8 == 0) {
+                nearPrincipal = cardinal[j / 8];
+                nearCardinal = (mod == 1) ? cardinal[j / 8 + 1] : cardinal[j / 8 - 1];
+            } else {
+                nearPrincipal = ordinal(j);
+                nearCardinal = (mod == 1) ? cardinal[(j + 4) / 8] : cardinal[(j - 4) / 8];
+            }
+            let abbr = nearPrincipal + "b" + nearCardinal;
+            result.push({ abbreviation: abbr, azimuth: az });
+        }
+    }
+    return result;
 }
 
 
@@ -55,8 +104,25 @@ function createCompassPoints() {
  *
  *   'nothing to do' => 'nothing to do'
  */
+var prev=[];
+
 function* expandBraces(str) {
-    throw new Error('Not implemented');
+    let matches = str.match(/({[^{]*?})/);
+    if (matches == null) {
+        if (prev.indexOf(str)==-1){
+            prev.push(str);
+            yield str;
+        }
+    } else {
+        let m = matches[1];
+        let strVars = m.slice(1, m.length - 1);
+        let vars = strVars.split(",");
+        for (let v of vars) {
+            yield* expandBraces(str.replace(m, v));
+        }
+    }
+
+
 }
 
 
@@ -85,10 +151,55 @@ function* expandBraces(str) {
  *   4 =>   [ 2, 4, 7,12 ],
  *          [ 3, 8,11,13 ],
  *          [ 9,10,14,15 ]]
- *
+ * 
+ * 
+ *    5=> 0 1 5 6 14
+ *        2 4 7 13 0
+ *        3 8 12 0 0
+ *        9 11 0 0 0 
+ *        10 0 0 0 0
+ *  
+ *  i = 0-01-210-0123-321-23-3
+ *  j = 0-10-012-3210-123-32-3
+ *  
  */
 function getZigZagMatrix(n) {
-    throw new Error('Not implemented');
+    let arr=Array(n);
+    for (let i=0;i<n;i++){
+        arr[i]=Array(n);
+        arr[i].fill(0);
+    }    
+    let goingUp=true;
+    let counter=0;
+    for (let k=1;k<n;k++){
+        if (goingUp){
+            for (let i=0;i<=k;i++){
+                arr[i][k-i]=++counter;
+            }
+            goingUp=false;
+        }
+        else{
+            for (let i=k;i>=0;i--){
+                arr[i][k-i]=++counter;
+            }
+            goingUp=true;
+        }        
+    }
+
+    for (let k=1;k<n;k++){
+        if (goingUp){
+            for (let i=k;i<n;i++){
+                arr[i][n+k-1-i]=++counter;
+            }
+            goingUp=false;
+        } else{
+            for (let i=n-1;i>=k;i--){
+                arr[i][n+k-1-i]=++counter;
+            }
+            goingUp=true;
+        }
+    }
+    return arr;
 }
 
 
