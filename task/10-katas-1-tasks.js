@@ -217,6 +217,9 @@ function getZigZagMatrix(n) {
  *
  * @example
  *
+ * 22 12 21
+ * 
+ * 
  * [[0,1],  [1,1]] => true
  * [[1,1], [2,2], [1,5], [5,6], [6,3]] => false
  * [[1,3], [2,3], [1,4], [2,4], [1,5], [2,5]]  => true
@@ -224,7 +227,40 @@ function getZigZagMatrix(n) {
  *
  */
 function canDominoesMakeRow(dominoes) {
-    throw new Error('Not implemented');
+    let first=dominoes.shift();
+    let result=[];
+    return recursiveCompose(dominoes, result, first)||recursiveCompose(dominoes, result, rotate(first));
+}
+function recursiveCompose(dominoes, result, next){
+    result.push(next);
+    let isSuccess=false;
+    if (dominoes.length==0){
+        return true;
+    } else{
+        for (let i=0;i<dominoes.length;i++){
+            let d=dominoes[i];
+            if(d[0]==next[1]){
+                let newDominoes=Array.from(dominoes);     
+                newDominoes.splice(i,1);           
+                isSuccess=recursiveCompose(newDominoes, result, d);
+            } else if (d[1]==next[1]) {
+                let newDominoes=Array.from(dominoes);
+                newDominoes.splice(i,1); 
+                isSuccess=recursiveCompose(newDominoes, result, rotate(d));                
+            }
+            if (isSuccess){
+                break;
+            }
+        }
+    }
+    return isSuccess;
+
+}
+function rotate(domino){
+    let tmp=domino[0];
+    domino[0]=domino[1];
+    domino[1]=tmp;
+    return domino;
 }
 
 
@@ -251,18 +287,22 @@ function extractRanges(nums) {
     let result=[];
     let range=[];
     for (let i=0;i<nums.length; i++){
-        if((range.length==0)||range[range.length-1]==nums[i-1]){
+        if((range.length==0)||range[range.length-1]==nums[i]-1){
             range.push(nums[i]);
         } else{
-            if (range.length>1){
+            if (range.length>2){
                 result.push(`${range[0]}-${range[range.length-1]}`);
             } else {
-                result.push(range[0]);
+                result.push(range);
             }            
             range=[];
             range.push(nums[i]);
-        }   
-
+        } 
+    }
+    if (range.length>2){
+        result.push(`${range[0]}-${range[range.length-1]}`);
+    } else if (range.length>0){
+        result.push(range);
     }
     return result.join(",");
 }
